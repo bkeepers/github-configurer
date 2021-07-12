@@ -9,6 +9,67 @@ module.exports = (robot, _, Settings = require('./lib/settings')) => {
     return Settings.sync(context.octokit, repo, config)
   }
 
+  async function triggerRepositoryUpdate (_context, { owner, repo }) {
+    /* Clone context without reference */
+    const context = Object.assign(Object.create(Object.getPrototypeOf(_context)), _context)
+
+    /* Change context to target repository */
+    const { repository } = context.payload
+    context.payload.repository = Object.assign(repository || {}, {
+      owner: {
+        login: owner
+      },
+      name: repo
+    })
+
+    return syncSettings(context, { owner, repo })
+  }
+
+  robot.on([
+    'installation.created',
+    'installation.new_permissions_accepted'
+  ], async context => {
+    const { payload } = context
+    const { repositories, installation } = payload
+    const { account } = installation
+    const { login: repositoryOwner } = account
+
+    if (!repositories) {
+      robot.log.debug('No new repositories found in the installation event, returning...')
+      return
+    }
+
+    await Promise.all(repositories.map(async (repository) => {
+      const { name: repositoryName } = repository
+
+      return triggerRepositoryUpdate(context, {
+        owner: repositoryOwner,
+        repo: repositoryName
+      })
+    }))
+  })
+
+  robot.on('installation_repositories.added', async context => {
+    const { payload } = context
+    const { repositories_added: repositories, installation } = payload
+    const { account } = installation
+    const { login: repositoryOwner } = account
+
+    if (!repositories) {
+      robot.log.debug('No new repositories found in the installation event, returning...')
+      return
+    }
+
+    await Promise.all(repositories.map(async (repository) => {
+      const { name: repositoryName } = repository
+
+      return triggerRepositoryUpdate(context, {
+        owner: repositoryOwner,
+        repo: repositoryName
+      })
+    }))
+  })
+
   robot.on('push', async context => {
     const { payload } = context
     const { repository } = payload
