@@ -146,15 +146,21 @@ branches:
         strict: true
         # Required. The list of status checks to require in order to merge into this branch
         contexts: []
+      # Commits pushed to matching branches must have verified signatures. Set to false to disable.
+      required_signatures: true
       # Required. Enforce all configured restrictions for administrators. Set to true to enforce required status checks for repository administrators. Set to null to disable.
       enforce_admins: true
-      # Prevent merge commits from being pushed to matching branches
+      # Prevents merge commits from being pushed to matching branches. Set to false to disable.
       required_linear_history: true
       # Required. Restrict who can push to this branch. Team and user restrictions are only available for organization-owned repositories. Set to null to disable.
       restrictions:
         apps: []
         users: []
         teams: []
+      # Permits force pushes for all users with push access. Set to null to disable.
+      allow_force_pushes: true
+      # Allows users with push access to delete matching branches. Set to false to disable.
+      allow_deletions: true
 ```
 
 ### Notes
